@@ -20,74 +20,76 @@ api = Api(app)
 
 class ClearSession(Resource):
 
-    def delete(self):
-    
-        session['page_views'] = None
-        session['user_id'] = None
+  def delete(self):
+  
+    session['page_views'] = None
+    session['user_id'] = None
 
-        return {}, 204
+    return {}, 204
 
 class IndexArticle(Resource):
     
-    def get(self):
-        articles = [ArticleSchema().dump(article) for article in Article.query.all()]
-        return make_response(articles, 200)
+  def get(self):
+    articles = [ArticleSchema().dump(article) for article in Article.query.all()]
+    return make_response(articles, 200)
 
 class ShowArticle(Resource):
 
-    def get(self, id):
+  def get(self, id):
 
-        article = Article.query.filter(Article.id == id).first()
-        article_json = ArticleSchema().dump(article)
+    article = Article.query.filter(Article.id == id).first()
+    article_json = ArticleSchema().dump(article)
 
-        if not session.get('user_id'):
-            session['page_views'] = 0 if not session.get('page_views') else session.get('page_views')
-            session['page_views'] += 1
+    if not session.get('user_id'):
+      session['page_views'] = 0 if not session.get('page_views') else session.get('page_views')
+      session['page_views'] += 1
 
-            if session['page_views'] <= 3:
-                return article_json, 200
-
-            return {'message': 'Maximum pageview limit reached'}, 401
-
+      if session['page_views'] <= 3:
         return article_json, 200
+
+      return {'message': 'Maximum pageview limit reached'}, 401
+
+    return article_json, 200
 
 class Login(Resource):
 
-    def post(self):
-        
-        username = request.get_json().get('username')
-        user = User.query.filter(User.username == username).first()
+  def post(self):
+      
+    username = request.get_json().get('username')
+    user = User.query.filter(User.username == username).first()
 
-        if user:
-        
-            session['user_id'] = user.id
-            return UserSchema().dump(user), 200
+    if user:
+    
+      session['user_id'] = user.id
+      return UserSchema().dump(user), 200
 
-        return {}, 401
+    return {}, 401
 
 class Logout(Resource):
 
-    def delete(self):
+  def delete(self):
 
-        session['user_id'] = None
-        
-        return {}, 204
+    session['user_id'] = None
+    
+    return {}, 204
 
 class CheckSession(Resource):
 
-    def get(self):
-        
-        user_id = session['user_id']
-        if user_id:
-            user = User.query.filter(User.id == user_id).first()
-            return UserSchema().dump(user), 200
-        
-        return {}, 401
+  def get(self):
+      
+    user_id = session['user_id']
+    if user_id:
+      user = User.query.filter(User.id == user_id).first()
+      return UserSchema().dump(user), 200
+    
+    return {}, 401
 
 class MemberOnlyIndex(Resource):
     
-    def get(self):
-        pass
+  def get(self):
+    user_id = session.get('user_id')
+    
+    return {'user_id': user_id}, 200
 
 class MemberOnlyArticle(Resource):
     
