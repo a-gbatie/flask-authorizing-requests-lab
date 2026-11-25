@@ -1,123 +1,203 @@
-# Lab: Authorizing Requests
+# Flask Authorizing Requests Lab
 
-## Scenario
+## Overview
 
-In this lab, we'll continue working on the blog site, and add some features that
-only logged in users have access to.
+This lab demonstrates how to implement request authorization in a Flask REST API using session-based authentication.
 
-## Tools & Resources
+The application restricts access to members-only articles by checking whether a user is logged in before returning protected resources.
 
-- [GitHub Repo](https://github.com/learn-co-curriculum/flask-authorizing-requests-lab)
-- [What is Authentication? - auth0](https://auth0.com/intro-to-iam/what-is-authentication)
-- [API - Flask: class flask.session](https://flask.palletsprojects.com/en/2.2.x/api/#flask.session)
+This lab builds upon previous concepts involving cookies, sessions, and user authentication.
 
-## Set Up
+## Learning Objectives
 
-There is some starter code in place for a Flask API backend and a React frontend.
-To get set up, run:
+- Understand the difference between authentication and authorization.
+- Use Flask sessions to identify logged-in users.
+- Restrict access to protected API endpoints.
+- Filter database records using SQLAlchemy.
+- Serialize database records using Marshmallow.
+- Return appropriate HTTP status codes and error messages.
+- Test authorization logic using Pytest.
+
+## Technologies Used
+
+- Python 3.10
+- Flask
+- Flask-RESTful
+- Flask-SQLAlchemy
+- Flask-Migrate
+- Marshmallow
+- SQLite
+- React
+- Faker
+- Pytest
+- Pipenv
+
+## Getting Started
+
+### 1. Clone the Repository
 
 ```bash
-pipenv install; pipenv shell
+git clone https://github.com/a-gbatie/flask-authorizing-requests-lab.git
+cd flask-authorizing-requests-lab
+```
+
+### 2. Install Backend Dependencies
+
+```bash
+pipenv install --python 3.10
+pipenv shell
+```
+
+Verify the Python version:
+
+```bash
+python --version
+```
+
+### 3. Install Frontend Dependencies
+
+```bash
 npm install --prefix client
+```
+
+### 4. Set Up the Database
+
+Navigate to the server directory:
+
+```bash
 cd server
+```
+
+Apply database migrations:
+
+```bash
 flask db upgrade
+```
+
+Seed the database:
+
+```bash
 python seed.py
 ```
 
-You can work on this lab by running the tests with `pytest -x`. It will also be
-helpful to see what's happening during the request/response cycle by running the
-app in the browser. You can run the Flask server with:
+The seed file creates:
+
+- 25 users with unique usernames.
+- 100 articles with randomly generated content.
+- A mixture of public and members-only articles.
+
+## Running the Application
+
+### Start the Flask Backend
+
+From the `server` directory:
 
 ```bash
 python app.py
 ```
 
-And you can run React in another terminal from the root project directory with:
+The backend runs at:
+
+http://localhost:5555
+
+### Start the React Frontend
+
+Open a separate terminal from the project root:
 
 ```bash
 npm start --prefix client
 ```
 
-You don't have to make any changes to the React code to get this lab working.
+The frontend runs at:
 
-## Instructions
+http://localhost:3000
 
-### Task 1: Define the Problem
+## API Endpoints
 
-Now that we've got the basic login feature working, we need to reward our logged
-in users with some bonus content that only users who have logged in will be able
-to access.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/articles` | Retrieve articles |
+| GET | `/articles/<int:id>` | Retrieve an individual article |
+| POST | `/login` | Log in a user |
+| DELETE | `/logout` | Log out a user |
+| GET | `/check_session` | Check the current user session |
+| DELETE | `/clear` | Reset session data |
+| GET | `/members_only_articles` | Retrieve members-only articles for logged-in users |
+| GET | `/members_only_articles/<int:id>` | Retrieve an individual article through an authorized endpoint |
 
-### Task 2: Determine the Design
+## Implementation
 
-We added a new attribute to our articles, `is_member_only`, to reflect whether
-the article should only be available to authorized users of the site. We also
-created two new views: `MemberOnlyIndex` and `MemberOnlyArticle`.
+### Session-Based Authorization
 
-Your goal is to add the following functionality to the new views:
+The application uses Flask's `session` object to determine whether a user is logged in.
 
-- If a user is not signed in, the `get()` methods in each view should return a
-  status code of 401 unauthorized, along with an error message.
-- If the user is signed in, the `get()` methods in each view should return the
-  JSON data for the members-only articles and the members-only article by ID, respectively.
-
-### Task 3: Develop, Test, and Refine the Code
-
-#### Step 1: Check Current User for Authorization
-
-Use the `session` to find if the user is logged in or not.
-
-#### Step 2: Update Logic and Response if User is Authorized
-
-If a user is not signed in, the `get()` methods in each view should return a
-status code of 401 unauthorized, along with an error message.
-
-#### Step 3: Update Logic and Response if User is not Authorized
-
-If a user is not signed in, the `get()` methods in each view should return a
-status code of 401 unauthorized, along with an error message.
-
-#### Step 4: Test and Refine the Code
-
-Run the test suite:
-
-```bash
-pytest
+```python
+user_id = session.get('user_id')
 ```
 
-If any tests aren't passing, refine your code using each error message.
+If a user is not logged in, the protected endpoint returns:
 
-View the app in browser and test login, logout, and session persistence. Refine code if needed.
-
-Feel free to also take a look at how the frontend logic is set up to use these endpoints.
-
-#### Step 5: Commit and Push Git History
-
-* Commit and push your code:
-
-```bash
-git add .
-git commit -m "final solution"
-git push
+```python
+return {'message': 'Unauthorized'}, 401
 ```
 
-* If you created a separate feature branch, remember to open a PR on main and merge.
+### Members-Only Article Index
 
-### Task 4: Document and Maintain
-Best Practice documentation steps:
-* Add comments to the code to explain purpose and logic, clarifying intent and functionality of your code to other developers.
-* Update README text to reflect the functionality of the application following https://makeareadme.com. 
-  * Add screenshot of completed work included in Markdown in README.
-* Delete any stale branches on GitHub
-* Remove unnecessary/commented out code
-* If needed, update git ignore to remove sensitive data
+The `MemberOnlyIndex` resource:
 
-## Important Submission Note
+- Checks whether the user is logged in.
+- Returns a 401 Unauthorized response if no user session exists.
+- Filters articles using the `is_member_only` attribute.
+- Serializes and returns members-only articles for authorized users.
 
-Before you submit your solution, you need to save your progress with git.
+### Individual Article Authorization
 
-1. Add your changes to the staging area by executing `git add .`.
-2. Create a commit by executing `git commit -m "Your commit message"`.
-3. Push your commits to GitHub by executing `git push origin main`.
+The `MemberOnlyArticle` resource:
 
-CodeGrade will grade your lab using the same tests as are provided in the `testing/` directory.
+- Checks the current user session.
+- Rejects unauthorized requests.
+- Retrieves an article by its ID.
+- Returns a 404 response if the article does not exist.
+- Serializes and returns the requested article for authorized users.
+
+### Database Filtering
+
+SQLAlchemy is used to retrieve specific database records.
+
+Filter members-only articles:
+
+```python
+Article.query.filter(Article.is_member_only == True).all()
+```
+
+Retrieve an individual article:
+
+```python
+Article.query.filter(Article.id == id).first()
+```
+
+## HTTP Status Codes
+
+| Status Code | Meaning |
+|-------------|---------|
+| 200 | OK |
+| 204 | No Content |
+| 401 | Unauthorized |
+| 404 | Not Found |
+
+## Running Tests
+
+Activate the Pipenv environment:
+
+```bash
+pipenv shell
+```
+
+Run the automated test suite:
+
+```bash
+python -m pytest -x
+```
+
+## Screenshot of Completed tests
+![All 3 Automated Tests Passing](image.png)
