@@ -89,7 +89,14 @@ class MemberOnlyIndex(Resource):
   def get(self):
     user_id = session.get('user_id')
     
-    return {'user_id': user_id}, 200
+    if not user_id:
+      return {'message': 'Unauthorized'}, 401
+    
+    articles = Article.query.filter_by(is_member_only=True).all()
+    
+    articles_json = [ArticleSchema().dump(article) for article in articles]
+    
+    return articles_json, 200
 
 class MemberOnlyArticle(Resource):
     
