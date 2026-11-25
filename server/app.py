@@ -106,10 +106,7 @@ class MemberOnlyArticle(Resource):
     if not user_id:
       return {'message': 'Unauthorized'}, 401
     
-    article = Article.query.filter_by(
-      id=id,
-      is_member_only=True
-    ).first()
+    article = Article.query.filter(Article.id == id).first()
     
     if not article:
       return {'message': 'Article not found'}, 404
@@ -127,4 +124,4 @@ api.add_resource(MemberOnlyArticle, '/members_only_articles/<int:id>', endpoint=
 
 
 if __name__ == '__main__':
-    app.run(port=5555, debug=True)
+  app.run(port=5555, debug=True)
