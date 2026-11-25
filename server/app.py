@@ -100,8 +100,21 @@ class MemberOnlyIndex(Resource):
 
 class MemberOnlyArticle(Resource):
     
-    def get(self, id):
-        pass
+  def get(self, id):
+    user_id = session.get('user_id')
+    
+    if not user_id:
+      return {'message': 'Unauthorized'}, 401
+    
+    article = Article.query.filter_by(
+      id=id,
+      is_member_only=True
+    ).first()
+    
+    if not article:
+      return {'message': 'Article not found'}, 404
+    
+    return ArticleSchema().dump(article), 200
 
 api.add_resource(ClearSession, '/clear', endpoint='clear')
 api.add_resource(IndexArticle, '/articles', endpoint='article_list')
